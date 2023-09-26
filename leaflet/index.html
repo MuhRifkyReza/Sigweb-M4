@@ -3,7 +3,12 @@
     <head>
         <title>M5 - Sigweb</title>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="crossorigin=""/>
+        <link rel="stylesheet" href="style.css">
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="crossorigin=""></script>
+
+        <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+        
+       
         <style>
             #map { 
             width: 100%;
@@ -17,19 +22,84 @@
         </style>
     </head>
     <body>
+        <div class="navbar">
+            <img src="logo.png" class="logo">
+            <ul>
+                <li><a href="#"> Home </a></li>
+                <li><a href="#"> Download </a></li>
+                <li><a href="#"> Konten </a></li>
+                <li><a href="#"> Statistik </a></li>
+            </ul>
+        </div>
         <div id="map"></div>
+        <script src="leaflet/gjson/jogja_wgs.js"></script>
+        <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
         <script>
             var map = L.map('map',{center: [-7.79558, 110.36949], zoom: 12});
             L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
             
+            //panggil geojson
+            L.geoJSON(jogjageojson,{
+                style: function(feature) {
+                    switch (feature.properties.KABUPATEN) {
+                        case 'Gunung Kidul': return {color: "#ff9900"};
+                        case 'Sleman': return {color: "red"};
+                        case 'Bantul': return {color: "blue"};
+                        case 'Yogyakarta': return {color: "green"};
+                        case 'Kulon Progo': return {color: "magenta"};
+                    }
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup(
+                        'Kecamatan adalah ' + '<strong>' + feature.properties.KECAMATAN + '</strong>'
+                        );
+                    }
+                }
+            ).addTo(map);
+
             //marker
             const src = "img/bukit_mengger.jpg"
             const popupContent = document.createElement("div")
             const imgWidth = 640
             popupContent.innerHTML = "<img src='" + src + "' width='" + imgWidth + "'>" + "<a target='_blank' href='" + src + "'>See the image</a>"
-            const marker = L.marker([-7.8922632, 110.3933431]).bindPopup(popupContent, {maxWidth:"640"}).addTo(map);
+            const mark = L.marker([-7.8922632, 110.3933431]).bindPopup(popupContent, {maxWidth:"640"}).addTo(map);
 
+            if (!navigator.geolocation) {
+                console.log("Your browser doesn't support geolocation feature!");
+            } 
+            else {
+                setInterval(() => {
+                    navigator.geolocation.getCurrentPosition(getPosition);
+                }, 5000);
+            }
+            var marker, circle, lat, long, accuracy;
+
+            function getPosition(position) {
+            // console.log(position)
+            lat = position.coords.latitude;
+            long = position.coords.longitude;
+            accuracy = position.coords.accuracy;
+
+            if (marker) {
+                map_init.removeLayer(marker);
+            }
+
+            if (circle) {
+                map_init.removeLayer(circle);
+            }
+
+            marker = L.marker([lat, long]);
+            circle = L.circle([lat, long], { radius: accuracy });
+
+            var featureGroup = L.featureGroup([marker, circle]).addTo(map_init);
+
+            map_init.fitBounds(featureGroup.getBounds());
+
+            console.log(
+                "Your coordinate is: Lat: " + lat + " Long: " + long + " Accuracy: " + accuracy
+                );
+            }
         </script>
     </body>
 </html>
